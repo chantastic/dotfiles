@@ -88,10 +88,12 @@ cask "raycast"
 cask "recut"
 cask "rode-central"
 cask "slack"
+cask "superhuman"
 cask "swiftdefaultappsprefpane"
 cask "tableplus"
 cask "visual-studio-code"
 cask "warp"
+cask "zoom"
 mas "1Blocker", id: 1365531024 unless [ $MACHINE == "work" ]
 mas "1Password for Safari", id: 1569813296 unless [ $MACHINE == "work" ]
 mas "Affinity Designer 2", id: 1616831348 unless [ $MACHINE == "work" ]
