@@ -1,1 +1,18 @@
-.lsp/
+i# macOS
+.DS_Store
+
+# Secrets
+.env
+.env.local
+.ssh/id_*
+.ssh/known_hosts
+
+# Local/machine-specific
+local.conf
+*.local
+
+# Editor caches
+.vscode/
+*.swp
+*.swo
+
