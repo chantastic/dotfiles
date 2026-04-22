@@ -1,0 +1,5 @@
+#!/bin/bash
+corepack enable pnpm
+npm install -g cf
+npm install -g @mariozechner/pi-coding-agent
+
