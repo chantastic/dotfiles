@@ -1,2 +1,9 @@
-brew "stow"
+brew "ffmpeg"
+brew "fd"
+brew "fd"
 brew "gh"
+brew "jq"
+brew "ripgrep"
+brew "stow"
+brew "yt-dlp"
+
