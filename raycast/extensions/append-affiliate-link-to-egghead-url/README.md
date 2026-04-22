@@ -1,1 +1,0 @@
-# Append affiliate link to egghead url
