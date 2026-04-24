@@ -11,3 +11,11 @@ Set up individual packages:
 stow git
 ```
 
+`bash` provides globally executable scripts via `~/bash`:
+
+```sh
+stow bash
+sync-repos --help
+```
+
+`sync-repos` is configured by editing [bash/bash/sync-repos](/Users/chan/dotfiles/bash/bash/sync-repos).
