@@ -3,6 +3,9 @@
 # Appearance
 osascript -e 'tell application "System Events" to tell appearance preferences to set dark mode to true'
 
+# Keyboard
+defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
+
 # Dock: visibility and contents
 defaults write com.apple.dock autohide -bool true
 defaults write com.apple.dock persistent-apps -array
