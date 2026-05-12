@@ -3,3 +3,5 @@ corepack enable pnpm
 npm install -g cf
 npm install -g @mariozechner/pi-coding-agent
 
+npm i -g @openai/codex@latest
+
