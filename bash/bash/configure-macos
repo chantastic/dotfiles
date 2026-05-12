@@ -1,7 +1,21 @@
 #!/bin/bash
 
-# Dock
-defaults write com.apple.dock autohide -bool true
+# Appearance
+osascript -e 'tell application "System Events" to tell appearance preferences to set dark mode to true'
 
+# Dock: visibility and contents
+defaults write com.apple.dock autohide -bool true
+defaults write com.apple.dock persistent-apps -array
+defaults write com.apple.dock persistent-others -array
+
+# Dock: behavior
+defaults write com.apple.dock show-recents -bool false
+defaults write com.apple.dock minimize-to-application -bool true
+
+# Dock: animation
+defaults write com.apple.dock autohide-delay -float 0
+defaults write com.apple.dock autohide-time-modifier -float 0.2
+
+# Apply changes
 killall Dock Finder
 
