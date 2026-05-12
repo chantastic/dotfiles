@@ -6,6 +6,12 @@ osascript -e 'tell application "System Events" to tell appearance preferences to
 # Keyboard
 defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
 
+# Menu bar
+defaults write NSGlobalDomain _HIHideMenuBar -bool false
+defaults write com.apple.menuextra.clock Show24Hour -bool true
+defaults write com.apple.menuextra.clock ShowDayOfWeek -bool false
+defaults write com.apple.menuextra.clock ShowDate -int 0
+
 # Dock: visibility and contents
 defaults write com.apple.dock autohide -bool true
 defaults write com.apple.dock persistent-apps -array
@@ -20,5 +26,5 @@ defaults write com.apple.dock autohide-delay -float 0
 defaults write com.apple.dock autohide-time-modifier -float 0.2
 
 # Apply changes
-killall Dock Finder
+killall Dock Finder SystemUIServer
 
