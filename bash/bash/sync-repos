@@ -10,6 +10,7 @@ REPOS=(
   "$HOME/Sites"$'\t'"https://github.com/chantastic/sites"
   "$HOME/.agents"$'\t'"https://github.com/chantastic/agents"
   "$HOME/.config"$'\t'"https://github.com/chantastic/config"
+  "$HOME/.pi"$'\t'"https://github.com/chantastic/pi"
 )
 
 usage() {
