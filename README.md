@@ -23,3 +23,4 @@ stow git
 | `bundle-node` | Enable `pnpm` via Corepack and install global Node CLI tools. |
 | `configure-macos` | Apply macOS defaults, currently Dock auto-hide, then restart affected apps. |
 | `sync-repos` | Clone missing repos, push clean repos with unpushed commits, and report dirty or mismatched repos. |
+| `update-deps` | Update Homebrew packages from the Brewfile and reinstall/update global Node CLI tools via `bundle-node`. |

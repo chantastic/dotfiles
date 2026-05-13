@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -euo pipefail
+
+BREWFILE="$HOME/dotfiles/brew/Brewfile"
+NODE_BUNDLE_SCRIPT="$HOME/bash/bundle-node"
+
+log() {
+  printf '\n==> %s\n' "$*"
+}
+
+log "Updating Homebrew"
+brew update
+
+log "Applying Brewfile: $BREWFILE"
+brew bundle --file "$BREWFILE"
+
+log "Upgrading Homebrew packages"
+brew upgrade
+
+log "Cleaning Homebrew cache"
+brew cleanup
+
+log "Updating global Node tools via $NODE_BUNDLE_SCRIPT"
+"$NODE_BUNDLE_SCRIPT"
+
+log "Done"
