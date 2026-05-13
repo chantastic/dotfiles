@@ -1,7 +1,13 @@
 #!/bin/bash
-corepack enable pnpm
-npm install -g cf
-npm install -g @mariozechner/pi-coding-agent
+set -euo pipefail
 
-npm i -g @openai/codex@latest
+corepack enable pnpm
+
+node_packages=(
+  cf
+  @earendil-works/pi-coding-agent@latest
+  @openai/codex@latest
+)
+
+npm install -g "${node_packages[@]}"
 
