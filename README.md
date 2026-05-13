@@ -4,10 +4,11 @@ Bootstrap repo for a new machine.
 
 - `dotfiles` owns shell wiring and setup commands.
 - `config` owns `~/.config`.
+- `~/.config/gh` belongs to the separate `~/.config` repo. Do not stow `gh` from this repo.
 
 ```sh
 cd dotfiles
-stow */
+stow bash brew git ssh zsh
 ```
 
 Set up individual packages:
