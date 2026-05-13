@@ -1,227 +1,131 @@
 #!/bin/bash
 set -uo pipefail
 
-DRY_RUN=0
+GIT_HOST="github.com"
 
-# macOS ships Bash 3.2, so this stays portable by using path/url pairs
-# instead of associative arrays.
 REPOS=(
-  "$HOME/dotfiles"$'\t'"https://github.com/chantastic/dotfiles"
-  "$HOME/Sites"$'\t'"https://github.com/chantastic/sites"
-  "$HOME/.agents"$'\t'"https://github.com/chantastic/agents"
-  "$HOME/.config"$'\t'"https://github.com/chantastic/config"
-  "$HOME/.pi"$'\t'"https://github.com/chantastic/pi"
+  "$HOME/dotfiles"$'\t'"chantastic/dotfiles"
+  "$HOME/Sites"$'\t'"chantastic/sites"
+  "$HOME/.agents"$'\t'"chantastic/agents"
+  "$HOME/.config"$'\t'"chantastic/config"
+  "$HOME/.pi"$'\t'"chantastic/pi"
 )
-
-usage() {
-  cat <<'EOF'
-Usage: sync-repos [--dry-run] [--help]
-
-Sync repos listed in the REPOS array in this script.
-
-Repo format:
-  TARGET_PATH<TAB>REPO_URL
-
-Behavior:
-  - clones repos that do not exist yet
-  - pushes repos that are clean and only ahead of upstream
-  - reports repos that are dirty, behind, diverged, detached, or missing upstream
-
-Notes:
-  - Edit the REPOS array in this file to add or remove repos.
-  - TARGET_PATH is the final clone location, so clone names are explicit.
-  - Existing repos must have an origin remote matching the configured URL.
-EOF
-}
 
 log() {
   printf '%s\n' "$*"
 }
 
-expand_path() {
-  case "$1" in
-    "~")
-      printf '%s\n' "$HOME"
-      ;;
-    "~/"*)
-      printf '%s/%s\n' "$HOME" "${1#"~/"}"
-      ;;
-    *)
-      printf '%s\n' "$1"
-      ;;
-  esac
-}
+normalize_repo() {
+  local repo="$1"
 
-run_cmd() {
-  if [[ "$DRY_RUN" -eq 1 ]]; then
-    printf '[DRY RUN] '
-    printf '%q ' "$@"
-    printf '\n'
-    return 0
-  fi
+  repo="${repo%/}"
+  repo="${repo%.git}"
 
-  "$@"
-}
-
-status_label() {
-  local actual="$1"
-  local planned="$2"
-
-  if [[ "$DRY_RUN" -eq 1 ]]; then
-    printf '%s\n' "$planned"
-  else
-    printf '%s\n' "$actual"
-  fi
-}
-
-normalize_git_url() {
-  local url="$1"
-
-  url="${url%/}"
-  url="${url%.git}"
-
-  case "$url" in
+  case "$repo" in
     *://*)
-      url="${url#*://}"
-      url="${url#*@}"
+      repo="${repo#*://}"
+      repo="${repo#*@}"
+      repo="${repo#${GIT_HOST}/}"
       ;;
-    *@*:* )
-      url="${url#*@}"
-      url="${url/:/\/}"
+    *@*:*)
+      repo="${repo#*@}"
+      repo="${repo#${GIT_HOST}:}"
+      ;;
+    "$GIT_HOST"/*)
+      repo="${repo#${GIT_HOST}/}"
       ;;
   esac
 
-  printf '%s\n' "$url"
+  printf '%s\n' "$repo"
 }
 
-clone_repo() {
-  local url="$1"
-  local target="$2"
-  local parent
-
-  parent="$(dirname "$target")"
-  run_cmd mkdir -p "$parent" || return 1
-  run_cmd git clone --quiet "$url" "$target"
+clone_url() {
+  printf 'git@%s:%s.git\n' "$GIT_HOST" "$1"
 }
 
-report_existing_repo() {
+sync_repo() {
   local target="$1"
-  local expected_url="$2"
-  local status_output branch upstream counts behind ahead
-  local actual_url normalized_actual normalized_expected
+  local expected_repo="$2"
+  local actual_url actual_repo status_output branch upstream counts behind ahead
+
+  if [[ ! -e "$target" ]]; then
+    mkdir -p "$(dirname "$target")" || return
+    if git clone --quiet "$(clone_url "$expected_repo")" "$target"; then
+      log "[CLONED] $target"
+    else
+      log "[ERROR] clone failed for $target"
+    fi
+    return
+  fi
 
   if [[ ! -d "$target/.git" ]]; then
     log "[SKIP] $target exists but is not a git repo"
-    return 0
+    return
   fi
 
   actual_url="$(git -C "$target" remote get-url origin 2>/dev/null || true)"
   if [[ -z "$actual_url" ]]; then
     log "[NO ORIGIN] $target"
-    return 0
+    return
   fi
 
-  normalized_actual="$(normalize_git_url "$actual_url")"
-  normalized_expected="$(normalize_git_url "$expected_url")"
-  if [[ "$normalized_actual" != "$normalized_expected" ]]; then
-    log "[REMOTE MISMATCH] $target (origin: $actual_url, expected: $expected_url)"
-    return 0
+  actual_repo="$(normalize_repo "$actual_url")"
+  if [[ "$actual_repo" != "$expected_repo" ]]; then
+    log "[REMOTE MISMATCH] $target (origin: $actual_url, expected: $expected_repo)"
+    return
   fi
 
-  if ! run_cmd git -C "$target" fetch --prune --quiet origin; then
+  if ! git -C "$target" fetch --prune --quiet origin; then
     log "[ERROR] $target fetch failed"
-    return 0
+    return
   fi
 
   status_output="$(git -C "$target" status --porcelain --untracked-files=normal 2>/dev/null)" || {
     log "[ERROR] $target git status failed"
-    return 0
+    return
   }
 
   if [[ -n "$status_output" ]]; then
     log "[DIRTY] $target"
-    return 0
+    return
   fi
 
   branch="$(git -C "$target" symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
   if [[ -z "$branch" ]]; then
     log "[DETACHED] $target"
-    return 0
+    return
   fi
 
   upstream="$(git -C "$target" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
   if [[ -z "$upstream" ]]; then
     log "[NO UPSTREAM] $target ($branch)"
-    return 0
+    return
   fi
 
   counts="$(git -C "$target" rev-list --left-right --count "${upstream}...HEAD" 2>/dev/null || true)"
   if [[ -z "$counts" ]]; then
     log "[ERROR] $target could not compare against $upstream"
-    return 0
+    return
   fi
 
   read -r behind ahead <<<"$counts"
 
   if [[ "$behind" -gt 0 && "$ahead" -gt 0 ]]; then
     log "[DIVERGED] $target ($branch: ahead $ahead, behind $behind)"
-    return 0
-  fi
-
-  if [[ "$behind" -gt 0 ]]; then
+  elif [[ "$behind" -gt 0 ]]; then
     log "[BEHIND] $target ($branch: behind $behind)"
-    return 0
-  fi
-
-  if [[ "$ahead" -gt 0 ]]; then
-    if run_cmd git -C "$target" push --quiet; then
-      log "[$(status_label PUSHED 'WOULD PUSH')] $target ($branch -> $upstream, $ahead commit(s))"
+  elif [[ "$ahead" -gt 0 ]]; then
+    if git -C "$target" push --quiet; then
+      log "[PUSHED] $target ($branch -> $upstream, $ahead commit(s))"
     else
       log "[ERROR] $target push failed"
     fi
-    return 0
+  else
+    log "[OK] $target"
   fi
-
-  log "[OK] $target"
 }
 
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --dry-run)
-      DRY_RUN=1
-      shift
-      ;;
-    --help|-h)
-      usage
-      exit 0
-      ;;
-    *)
-      log "Unknown argument: $1"
-      usage
-      exit 1
-      ;;
-  esac
-done
-
-for repo in "${REPOS[@]}"; do
-  IFS=$'\t' read -r raw_target raw_url <<<"$repo"
-
-  if [[ -z "${raw_target:-}" || -z "${raw_url:-}" ]]; then
-    log "[SKIP] invalid repo entry: $repo"
-    continue
-  fi
-
-  target="$(expand_path "$raw_target")"
-  url="$raw_url"
-
-  if [[ ! -e "$target" ]]; then
-    if clone_repo "$url" "$target"; then
-      log "[$(status_label CLONED 'WOULD CLONE')] $target"
-    else
-      log "[ERROR] clone failed for $target"
-    fi
-    continue
-  fi
-
-  report_existing_repo "$target" "$url"
+for entry in "${REPOS[@]}"; do
+  IFS=$'\t' read -r target repo <<<"$entry"
+  sync_repo "$target" "$(normalize_repo "$repo")"
 done
