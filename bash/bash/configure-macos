@@ -7,6 +7,18 @@ osascript -e 'tell application "System Events" to tell appearance preferences to
 # Keyboard
 defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
 
+# Keep Apple's press-and-hold special character suggester enabled.
+# Tradeoff: macOS uses InitialKeyRepeat both for the special-character popover
+# and for the first repeated character on keys with no alternates. KeyRepeat
+# only controls repeats after that first one.
+defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool true
+
+# Keep the special-character popover reasonably quick.
+# Tradeoff: keys with no alternates can still emit one duplicate after this delay.
+# macOS stores these values in 15ms units.
+defaults write NSGlobalDomain InitialKeyRepeat -int 35
+defaults write NSGlobalDomain KeyRepeat -int 300000
+
 # Menu bar
 defaults write NSGlobalDomain _HIHideMenuBar -bool false
 defaults write com.apple.menuextra.clock Show24Hour -bool true
