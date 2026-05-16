@@ -93,10 +93,6 @@
           "to": [{ "key_code": "s" }]
         },
         {
-          "from": { "key_code": "quote" },
-          "to": [{ "key_code": "hyphen" }]
-        },
-        {
           "from": { "key_code": "hyphen" },
           "to": [{ "key_code": "open_bracket" }]
         },
@@ -141,6 +137,24 @@
           "to": [{ "key_code": "z" }]
         }
       ],
+      "complex_modifications": {
+        "rules": [
+          {
+            "description": "Quote key: tap for hyphen, hold for control",
+            "manipulators": [
+              {
+                "type": "basic",
+                "from": {
+                  "key_code": "quote",
+                  "modifiers": { "optional": ["any"] }
+                },
+                "to": [{ "key_code": "left_control" }],
+                "to_if_alone": [{ "key_code": "hyphen" }]
+              }
+            ]
+          }
+        ]
+      },
       "virtual_hid_keyboard": { "keyboard_type_v2": "ansi" }
     }
   ]
