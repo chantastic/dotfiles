@@ -57,7 +57,7 @@
 	process = git-lfs filter-process
 	required = true
 [core]
-	editor = nvim
+	editor = vim
 [help]
 	autocorrect = 1
 [pull]
