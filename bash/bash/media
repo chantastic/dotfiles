@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+media: ffmpeg presets for editor/social video work
+
+Usage:
+  media inspect <input>
+  media transcode <input> [--out <output>] [--preset editor-1080p|social-1080p] [--crf <n>] [--preset-speed <ffmpeg-preset>]
+  media normalize <input> [--out <output>] [--lufs <n>] [--tp <n>] [--lra <n>] [--audio-bitrate <rate>]
+  media prep <input> [--out <output>] [--preset editor-1080p]
+
+Notes:
+  normalize uses two-pass ffmpeg loudnorm and copies video unchanged (-c:v copy).
+  prep transcodes to 1080p, then normalizes audio.
+EOF
+}
+
+need() { command -v "$1" >/dev/null || { echo "missing dependency: $1" >&2; exit 127; }; }
+stem() { local b; b=$(basename "$1"); echo "${b%.*}"; }
+dirname_of() { dirname "$1"; }
+
+inspect() {
+  local input=${1:-}
+  [[ -n "$input" ]] || { usage; exit 2; }
+  need ffprobe
+  ffprobe -hide_banner -i "$input"
+}
+
+transcode() {
+  need ffmpeg
+  local input=${1:-}; shift || true
+  [[ -n "$input" ]] || { usage; exit 2; }
+  local out="" preset="editor-1080p" crf="18" speed="medium" audio_bitrate="320k"
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --out|-o) out=$2; shift 2 ;;
+      --preset) preset=$2; shift 2 ;;
+      --crf) crf=$2; shift 2 ;;
+      --preset-speed|--speed) speed=$2; shift 2 ;;
+      --audio-bitrate) audio_bitrate=$2; shift 2 ;;
+      --help|-h) usage; exit 0 ;;
+      *) echo "unknown option: $1" >&2; exit 2 ;;
+    esac
+  done
+  [[ -n "$out" ]] || out="$(dirname_of "$input")/$(stem "$input")_${preset}.mp4"
+
+  local vf
+  case "$preset" in
+    editor-1080p|social-1080p)
+      vf="scale='if(gt(iw/ih,16/9),1920,-2)':'if(gt(iw/ih,16/9),-2,1080)':flags=lanczos"
+      ;;
+    *) echo "unknown transcode preset: $preset" >&2; exit 2 ;;
+  esac
+
+  ffmpeg -hide_banner -y -i "$input" \
+    -map 0:v:0 -map 0:a:0? \
+    -vf "$vf" \
+    -c:v libx264 -preset "$speed" -crf "$crf" -pix_fmt yuv420p \
+    -c:a aac -b:a "$audio_bitrate" \
+    -movflags +faststart \
+    "$out"
+}
+
+normalize() {
+  need ffmpeg; need jq
+  local input=${1:-}; shift || true
+  [[ -n "$input" ]] || { usage; exit 2; }
+  local out="" lufs="-16" tp="-1.5" lra="11" audio_bitrate="320k"
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --out|-o) out=$2; shift 2 ;;
+      --lufs|--i) lufs=$2; shift 2 ;;
+      --tp|--true-peak) tp=$2; shift 2 ;;
+      --lra) lra=$2; shift 2 ;;
+      --audio-bitrate) audio_bitrate=$2; shift 2 ;;
+      --help|-h) usage; exit 0 ;;
+      *) echo "unknown option: $1" >&2; exit 2 ;;
+    esac
+  done
+  [[ -n "$out" ]] || out="$(dirname_of "$input")/$(stem "$input")_normalized.mp4"
+
+  local tmp json measured_i measured_tp measured_lra measured_thresh offset
+  tmp=$(mktemp)
+  ffmpeg -hide_banner -nostats -i "$input" \
+    -map 0:a:0 \
+    -af "loudnorm=I=${lufs}:TP=${tp}:LRA=${lra}:print_format=json" \
+    -f null - 2> "$tmp" || { cat "$tmp" >&2; rm -f "$tmp"; exit 1; }
+
+  json=$(awk '/^{/{flag=1} flag{print} /^}/{flag=0}' "$tmp")
+  rm -f "$tmp"
+  [[ -n "$json" ]] || { echo "could not parse loudnorm analysis" >&2; exit 1; }
+
+  measured_i=$(jq -r '.input_i' <<<"$json")
+  measured_tp=$(jq -r '.input_tp' <<<"$json")
+  measured_lra=$(jq -r '.input_lra' <<<"$json")
+  measured_thresh=$(jq -r '.input_thresh' <<<"$json")
+  offset=$(jq -r '.target_offset' <<<"$json")
+
+  ffmpeg -hide_banner -y -i "$input" \
+    -map 0:v:0? -map 0:a:0 \
+    -c:v copy \
+    -af "loudnorm=I=${lufs}:TP=${tp}:LRA=${lra}:measured_I=${measured_i}:measured_TP=${measured_tp}:measured_LRA=${measured_lra}:measured_thresh=${measured_thresh}:offset=${offset}:linear=true:print_format=summary" \
+    -c:a aac -b:a "$audio_bitrate" \
+    -movflags +faststart \
+    "$out"
+}
+
+prep() {
+  local input=${1:-}; shift || true
+  [[ -n "$input" ]] || { usage; exit 2; }
+  local out="" preset="editor-1080p"
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --out|-o) out=$2; shift 2 ;;
+      --preset) preset=$2; shift 2 ;;
+      --help|-h) usage; exit 0 ;;
+      *) echo "unknown option: $1" >&2; exit 2 ;;
+    esac
+  done
+  [[ -n "$out" ]] || out="$(dirname_of "$input")/$(stem "$input")_${preset}_normalized.mp4"
+  local tmp="$(dirname_of "$out")/.$(stem "$out").transcoded.tmp.mp4"
+  transcode "$input" --out "$tmp" --preset "$preset"
+  normalize "$tmp" --out "$out"
+  rm -f "$tmp"
+}
+
+cmd=${1:-}
+case "$cmd" in
+  inspect|probe) shift; inspect "$@" ;;
+  transcode) shift; transcode "$@" ;;
+  normalize|normalise) shift; normalize "$@" ;;
+  prep) shift; prep "$@" ;;
+  help|--help|-h|'') usage ;;
+  *) echo "unknown command: $cmd" >&2; usage; exit 2 ;;
+esac

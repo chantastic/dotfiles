@@ -1,0 +1,54 @@
+# Transcribe audio/video with Deepgram Nova-3.
+# Usage: transcribe input.mp4 [-o transcript.json] [--keyterms "React,Convex"]
+# Optional: export DEEPGRAM_API_KEY_OP_REF='op://Private/Deepgram API Key/credential'
+transcribe() {
+  emulate -L zsh
+
+  local script="$HOME/.agents/services/transcribe.py"
+  if [[ ! -f "$script" ]]; then
+    print -u2 "transcribe: missing $script"
+    return 1
+  fi
+
+  if [[ $# -eq 0 ]]; then
+    print -u2 "Usage: transcribe <audio-or-video> [-o transcript.json] [--keyterms 'term,term']"
+    return 2
+  fi
+
+  if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    python3 "$script" --help
+    return $?
+  fi
+
+  local key="$DEEPGRAM_API_KEY"
+  if [[ -z "$key" ]]; then
+    local ref="${DEEPGRAM_API_KEY_OP_REF:-}"
+    local refs=()
+    [[ -n "$ref" ]] && refs+=("$ref")
+    refs+=(
+      'op://Private/Deepgram API Key/credential'
+      'op://Private/Deepgram/credential'
+      'op://Private/Deepgram API Key/api key'
+      'op://Private/Deepgram/password'
+    )
+
+    if ! command -v op >/dev/null 2>&1; then
+      print -u2 "transcribe: 1Password CLI not found; install/sign in or set DEEPGRAM_API_KEY"
+      return 1
+    fi
+
+    local candidate
+    for candidate in $refs; do
+      key="$(op read "$candidate" 2>/dev/null)" && [[ -n "$key" ]] && break
+      key=""
+    done
+  fi
+
+  if [[ -z "$key" ]]; then
+    print -u2 "transcribe: DEEPGRAM_API_KEY not set and no 1Password ref worked"
+    print -u2 "Set: export DEEPGRAM_API_KEY_OP_REF='op://<vault>/<item>/<field>'"
+    return 1
+  fi
+
+  DEEPGRAM_API_KEY="$key" python3 "$script" "$@"
+}

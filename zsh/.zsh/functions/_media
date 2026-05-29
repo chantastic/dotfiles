@@ -1,0 +1,71 @@
+#compdef media
+
+_media() {
+  local -a commands presets speeds common_audio_rates lufs_values tp_values lra_values
+  commands=(
+    'inspect:show ffprobe info'
+    'probe:alias for inspect'
+    'transcode:transcode video using an ffmpeg preset'
+    'normalize:two-pass loudness normalize audio, copying video'
+    'normalise:alias for normalize'
+    'prep:transcode then normalize'
+    'help:show help'
+  )
+  presets=('editor-1080p' 'social-1080p')
+  speeds=('ultrafast' 'superfast' 'veryfast' 'faster' 'fast' 'medium' 'slow' 'slower' 'veryslow')
+  common_audio_rates=('128k' '192k' '256k' '320k')
+  lufs_values=('-14' '-16' '-18' '-23' '-24')
+  tp_values=('-1' '-1.5' '-2')
+  lra_values=('7' '9' '11' '13')
+
+  _arguments -C \
+    '1:command:->command' \
+    '*::arg:->args'
+
+  case $state in
+    command)
+      _describe -t commands 'media command' commands
+      ;;
+    args)
+      case $words[2] in
+        inspect|probe)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show help]' \
+            '1:input video:_files -g "*.((#i)mp4|mov|m4v|mxf|webm|mkv)(.)"'
+          ;;
+        transcode)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show help]' \
+            '(-o --out)'{-o,--out}'[output file]:output:_files' \
+            '--preset[transcode preset]:preset:($presets)' \
+            '--crf[quality CRF, lower is better/larger]:crf:(16 17 18 19 20 21 22)' \
+            '(--speed --preset-speed)'{--speed,--preset-speed}'[x264 speed preset]:speed:($speeds)' \
+            '--audio-bitrate[audio bitrate]:bitrate:($common_audio_rates)' \
+            '1:input video:_files -g "*.((#i)mp4|mov|m4v|mxf|webm|mkv)(.)"'
+          ;;
+        normalize|normalise)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show help]' \
+            '(-o --out)'{-o,--out}'[output file]:output:_files' \
+            '(--lufs --i)'{--lufs,--i}'[integrated loudness target]:LUFS:($lufs_values)' \
+            '(--tp --true-peak)'{--tp,--true-peak}'[true peak target]:dBTP:($tp_values)' \
+            '--lra[loudness range target]:LRA:($lra_values)' \
+            '--audio-bitrate[audio bitrate]:bitrate:($common_audio_rates)' \
+            '1:input video:_files -g "*.((#i)mp4|mov|m4v|mxf|webm|mkv)(.)"'
+          ;;
+        prep)
+          _arguments \
+            '(-h --help)'{-h,--help}'[show help]' \
+            '(-o --out)'{-o,--out}'[output file]:output:_files' \
+            '--preset[prep preset]:preset:($presets)' \
+            '1:input video:_files -g "*.((#i)mp4|mov|m4v|mxf|webm|mkv)(.)"'
+          ;;
+        *)
+          _files
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_media "$@"
