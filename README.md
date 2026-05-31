@@ -8,7 +8,7 @@ Bootstrap repo for a new machine.
 
 ```sh
 cd dotfiles
-stow bash brew git karabiner ssh zsh
+stow bash brew git karabiner ssh tmux zsh
 ```
 
 Set up individual packages:
