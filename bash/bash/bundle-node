@@ -8,8 +8,7 @@ node_packages=(
   @earendil-works/pi-coding-agent@latest
   @openai/codex@latest
   @anthropic-ai/claude-code@latest
-  copilot-cli@latest
+  @github/copilot@latest
 )
 
 npm install -g "${node_packages[@]}"
-
