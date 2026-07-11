@@ -51,6 +51,45 @@ defaults write com.apple.dock autohide-time-modifier -float 0.2
 defaults write com.apple.finder NewWindowTarget -string "PfLo"
 defaults write com.apple.finder NewWindowTargetPath -string "file://${HOME}/Downloads/"
 
+# Safari
+# Current macOS stores Safari prefs in a TCC-protected container. Grant your
+# terminal Full Disk Access before running this script.
+# Safari must be quit first or it may write its cached prefs back over these.
+safari_plist="${HOME}/Library/Containers/com.apple.Safari/Data/Library/Preferences/com.apple.Safari.plist"
+
+killall Safari 2>/dev/null || true
+
+if plutil -lint "${safari_plist}" >/dev/null 2>&1; then
+  # Safari: AutoFill web forms
+  defaults write "${safari_plist}" AutoFillFromAddressBook -bool false
+  defaults write "${safari_plist}" AutoFillPasswords -bool false
+  defaults write "${safari_plist}" AutoFillCreditCardData -bool false
+  defaults write "${safari_plist}" AutoFillMiscellaneousForms -bool false
+
+  # Safari: Developer features
+  defaults write "${safari_plist}" IncludeDevelopMenuPreferenceKey -bool true
+  defaults write "${safari_plist}" WebKitDeveloperExtrasEnabledPreferenceKey -bool true
+  defaults write "${safari_plist}" com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled -bool true
+  defaults write NSGlobalDomain WebKitDeveloperExtras -bool true
+
+  # Safari: behavior
+  defaults write "${safari_plist}" ShowFullURLInSmartSearchField -bool true
+  defaults write "${safari_plist}" AutoOpenSafeDownloads -bool false
+  defaults write "${safari_plist}" WarnAboutFraudulentWebsites -bool true
+  defaults write "${safari_plist}" WebKitTabToLinksPreferenceKey -bool true
+  defaults write "${safari_plist}" com.apple.Safari.ContentPageGroupIdentifier.WebKit2TabsToLinks -bool true
+  defaults write "${safari_plist}" HomePage -string "about:blank"
+  defaults write "${safari_plist}" InstallExtensionUpdatesAutomatically -bool true
+
+  # Safari: search privacy
+  defaults write "${safari_plist}" UniversalSearchEnabled -bool false
+  defaults write "${safari_plist}" SuppressSearchSuggestions -bool true
+
+  killall cfprefsd 2>/dev/null || true
+else
+  echo "Skipping Safari prefs: grant Full Disk Access to your terminal, quit/reopen it, then rerun." >&2
+fi
+
 # Apply changes
-killall Dock Finder SystemUIServer
+killall Dock Finder SystemUIServer 2>/dev/null || true
 
