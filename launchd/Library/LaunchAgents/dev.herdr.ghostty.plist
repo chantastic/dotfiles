@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>dev.herdr.ghostty</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/open</string>
+    <string>-na</string>
+    <string>Ghostty.app</string>
+    <string>--args</string>
+    <string>-e</string>
+    <string>/bin/zsh</string>
+    <string>-lc</string>
+    <string>exec herdr</string>
+  </array>
+
+  <key>LimitLoadToSessionType</key>
+  <string>Aqua</string>
+
+  <key>RunAtLoad</key>
+  <true/>
+</dict>
+</plist>

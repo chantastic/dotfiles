@@ -1,0 +1,15 @@
+#!/bin/bash
+set -euo pipefail
+
+label="dev.herdr.ghostty"
+plist="${HOME}/Library/LaunchAgents/${label}.plist"
+domain="gui/$(/usr/bin/id -u)"
+
+if [[ ! -f "${plist}" ]]; then
+  echo "Missing ${plist}. Run 'stow launchd' from ~/dotfiles first." >&2
+  exit 1
+fi
+
+/usr/bin/plutil -lint "${plist}"
+/bin/launchctl bootout "${domain}/${label}" 2>/dev/null || true
+/bin/launchctl bootstrap "${domain}" "${plist}"
