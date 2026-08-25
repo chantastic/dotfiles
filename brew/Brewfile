@@ -1,3 +1,5 @@
+tap "anomalyco/tap"
+brew "anomalyco/tap/opencode"
 brew "ffmpeg"
 brew "fd"
 brew "fd"
