@@ -2,6 +2,7 @@ tap "anomalyco/tap"
 brew "anomalyco/tap/opencode"
 brew "arduino-cli"
 brew "ffmpeg"
+brew "ffmpeg-full" # keg-only; zscale/libplacebo for HDR→SDR tonemapping
 brew "fd"
 brew "gh"
 brew "gitleaks"
