@@ -12,6 +12,7 @@ brew "jq"
 brew "lazygit"
 brew "neovim"
 brew "node@24"
+brew "python@3.12" # davinci-resolve-mcp picks python3.12 first; Resolve scripting is lowest-risk on 3.10–3.12
 cask "ollama-app"
 cask "omniwm"
 tap "aprilnea/tap"

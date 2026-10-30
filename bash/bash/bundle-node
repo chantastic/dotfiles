@@ -9,6 +9,12 @@ node_packages=(
   @openai/codex@latest
   @anthropic-ai/claude-code@latest
   @github/copilot@latest
+  davinci-resolve-mcp@latest
 )
 
 npm install -g "${node_packages[@]}"
+
+# DaVinci Resolve MCP: the npm package is a launcher. Build its Python env, then register it for every project.
+davinci-resolve-mcp setup --clients manual </dev/null
+claude mcp remove --scope user davinci-resolve >/dev/null 2>&1 || true
+claude mcp add --scope user davinci-resolve -- davinci-resolve-mcp
