@@ -69,3 +69,7 @@
 [credential "https://gist.github.com"]
 	helper = 
 	helper = !/opt/homebrew/bin/gh auth git-credential
+[alto "https://git.workos.cloud"]
+	binding = 8809af84f60918bc7f7585b0191bcb007b2b5e73a60de84a4585900b4c15c87b
+[url "alto::8809af84f60918bc7f7585b0191bcb007b2b5e73a60de84a4585900b4c15c87b::https://git.workos.cloud/"]
+	insteadOf = https://git.workos.cloud/
