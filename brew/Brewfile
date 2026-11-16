@@ -10,6 +10,7 @@ brew "gh"
 brew "gitleaks"
 cask "ghostty"
 cask "grok-build"
+cask "claude-code@latest" # npm route breaks: Socket firewall resets the 60MB native optional dep and npm silently skips it
 brew "jq"
 brew "lazygit"
 brew "neovim"

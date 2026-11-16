@@ -7,7 +7,6 @@ node_packages=(
   cf
   @earendil-works/pi-coding-agent@latest
   @openai/codex@latest
-  @anthropic-ai/claude-code@latest
   @github/copilot@latest
   davinci-resolve-mcp@latest
 )
